@@ -476,6 +476,15 @@ def main():
     sstp_count = len(sstp_nodes)
     if sstp_count == 0:
         die(f"从 {raw_count} 个原始节点中没有解析出任何 SSTP(TCP) 节点 — 数据格式可能已变化, 需要人工适配")
+    # Keep the previously verified US relay as a candidate when it leaves the official feed.
+    # It must pass the same live Worker check before appearing in published outputs.
+    retained_candidate = {
+        "host": "vpn592200602.opengw.net", "port": 1490,
+        "ip": "98.160.239.252", "country": "United States", "country_code": "US",
+    }
+    if not any(n["host"] == retained_candidate["host"] and n["port"] == retained_candidate["port"] for n in sstp_nodes):
+        sstp_nodes.append(retained_candidate)
+        log("VPN GATE", "官方源未收录已验证的美国候选；加入本次实时检测，通过后才发布")
     uniq = dedupe(sstp_nodes)
 
     if MAX_CHECK_NODES > 0:
@@ -522,4 +531,5 @@ if __name__ == "__main__":
         raise
     except Exception as exc:
         die(f"程序异常: {type(exc).__name__}: {exc}")
+
 
